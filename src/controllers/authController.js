@@ -74,25 +74,7 @@ const register = async (req, res) => {
 
     await user.save();
 
-    // Generate JWT token
-    const token = generateToken({
-      userId: user._id,
-      accountId: account._id,
-      role: adminRole.roleName,
-    });
-
-    // Remove password from user object
-    const userResponse = user.toJSON();
-
-    sendResponse(res, 201, true, "Account created successfully", {
-      token,
-      user: userResponse,
-      account: {
-        id: account._id,
-        slug: account.slug,
-        plan: account.plan,
-      },
-    });
+    sendResponse(res, 201, true, "Account created successfully");
   } catch (error) {
     console.error("Registration error:", error);
     sendError(res, 500, "Registration failed");
@@ -132,12 +114,6 @@ const login = async (req, res, next) => {
 
       sendResponse(res, 200, true, "Login successful", {
         token,
-        user: userResponse,
-        account: {
-          id: user.account._id,
-          slug: user.account.slug,
-          plan: user.account.plan,
-        },
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -154,20 +130,31 @@ const getProfile = async (req, res) => {
   try {
     const user = req.user;
 
-    sendResponse(res, 200, true, "Profile retrieved successfully", {
-      user: user.toJSON(),
+    const data = {
+      user: {
+        user_id: user._id,
+        name: user.name,
+        email_id: user.email,
+        is_active: user.is_active,
+        role: user.role.roleName,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        last_login: user.lastLogin,
+      },
       account: {
-        id: user.account._id,
+        account_id: user.account._id,
         slug: user.account.slug,
         plan: user.account.plan,
-        noteCount: user.account.noteCount,
         limit: user.account.limit,
+        note_count: user.account.noteCount,
+        current_subscription: user.account.currentSubscription,
+        account_active: user.account.isActive,
+        created_at: user.account.createdAt,
+        updated_at: user.account.updatedAt,
       },
-      role: {
-        id: user.role._id,
-        name: user.role.roleName,
-      },
-    });
+    };
+
+    sendResponse(res, 200, true, "Profile retrieved successfully", data);
   } catch (error) {
     console.error("Get profile error:", error);
     sendError(res, 500, "Failed to get profile");
@@ -232,14 +219,13 @@ const inviteUser = async (req, res) => {
 
     await newUser.save();
 
-    // In a real application, you would send an email with the temporary password
-    // For now, we'll return it in the response (not recommended for production)
+    // I need to implement mailing service to notify user on their email
 
     const userResponse = newUser.toJSON();
 
     sendResponse(res, 201, true, "User invited successfully", {
-      user: userResponse,
-      tempPassword, // Remove this in production and send via email
+      email: userResponse.email,
+      tempPassword, // I will remove this later and send it via email
       message: "User should change password on first login",
     });
   } catch (error) {
@@ -273,6 +259,15 @@ const changePassword = async (req, res) => {
     );
     if (!isValidPassword) {
       return sendError(res, 400, "Current password is incorrect");
+    }
+
+    const isSameAsOld = await comparePassword(newPassword, user.password);
+    if (isSameAsOld) {
+      return sendError(
+        res,
+        400,
+        "New password cannot be the same as the old password"
+      );
     }
 
     // Update password

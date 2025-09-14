@@ -14,8 +14,6 @@ const paymentSchema = new mongoose.Schema(
     },
     razorpayPaymentId: {
       type: String,
-      unique: true,
-      sparse: true,
     },
     razorpayOrderId: {
       type: String,
@@ -54,7 +52,7 @@ const paymentSchema = new mongoose.Schema(
 
 // Indexes
 paymentSchema.index({ account: 1, status: 1 });
-paymentSchema.index({ razorpayPaymentId: 1 });
+paymentSchema.index({ razorpayPaymentId: 1 }, { unique: true, sparse: true });
 paymentSchema.index({ razorpayOrderId: 1 });
 paymentSchema.index({ createdAt: -1 });
 

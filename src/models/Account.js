@@ -6,7 +6,6 @@ const accountSchema = new mongoose.Schema(
     slug: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -43,7 +42,8 @@ const accountSchema = new mongoose.Schema(
 );
 
 // Index for faster queries
-accountSchema.index({ slug: 1 });
+// accountSchema.index({ slug: 1 });
+accountSchema.index({ slug: 1 }, { unique: true });
 accountSchema.index({ isActive: 1, isDeleted: 1 });
 
 // Virtual to check if account can create more notes

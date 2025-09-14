@@ -10,7 +10,6 @@ const subscriptionSchema = new mongoose.Schema(
     },
     razorpaySubscriptionId: {
       type: String,
-      sparse: true, // Allows null values but enforces uniqueness when present
     },
     plan: {
       type: String,
@@ -40,7 +39,7 @@ const subscriptionSchema = new mongoose.Schema(
 
 // Indexes
 subscriptionSchema.index({ account: 1, status: 1 });
-subscriptionSchema.index({ razorpaySubscriptionId: 1 });
+subscriptionSchema.index({ razorpaySubscriptionId: 1 }, { sparse: true });
 subscriptionSchema.index({ endDate: 1 });
 
 // Method to cancel subscription

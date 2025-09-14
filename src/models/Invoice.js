@@ -14,8 +14,6 @@ const invoiceSchema = new mongoose.Schema(
     },
     razorpayInvoiceId: {
       type: String,
-      unique: true,
-      sparse: true,
     },
     amount: {
       type: Number,
@@ -49,7 +47,7 @@ const invoiceSchema = new mongoose.Schema(
 
 // Indexes
 invoiceSchema.index({ account: 1, status: 1 });
-invoiceSchema.index({ razorpayInvoiceId: 1 });
+invoiceSchema.index({ razorpayInvoiceId: 1 }, { unique: true, sparse: true });
 invoiceSchema.index({ dueDate: 1 });
 invoiceSchema.index({ issuedAt: -1 });
 
