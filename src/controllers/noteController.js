@@ -62,6 +62,9 @@ const getNotes = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, tags } = req.query;
     const user = req.user;
+    if(limit > 100) {
+      limit = 100;
+    }
     const tenantFilter = req.tenantFilter || {};
 
     // Build query
@@ -240,11 +243,12 @@ const updateNote = async (req, res) => {
               user.account._id,
               tagName.trim()
             );
-            tagIds.push(tag._id);
+             tagIds.push(tag._id.toString());
           }
         }
       }
-      note.tags = tagIds;
+      // DeDuplicate: it will store only unique id instead of storing duplicate tags to a notes
+      note.tags = [...new Set(tagIds)];
     }
 
     await note.save();
@@ -324,6 +328,9 @@ const getMyNotes = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, tags } = req.query;
     const user = req.user;
+    if(limit > 100){
+      limit = 100;
+    }
 
     // Build query for user's own notes
     const query = {

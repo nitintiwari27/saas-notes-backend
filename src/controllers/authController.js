@@ -214,6 +214,7 @@ const inviteUser = async (req, res) => {
       email: email.toLowerCase(),
       password: tempPassword, // Will be hashed by pre-save middleware
       name,
+      isActive: false,
       role: userRole._id,
     });
 

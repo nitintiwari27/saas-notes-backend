@@ -5,7 +5,7 @@ const SUBSCRIPTION_PLANS = {
 
 const SUBSCRIPTION_LIMITS = {
   [SUBSCRIPTION_PLANS.FREE]: {
-    maxNotes: 3,
+    maxNotes: 20,
   },
   [SUBSCRIPTION_PLANS.PRO]: {
     maxNotes: -1, // -1 means unlimited

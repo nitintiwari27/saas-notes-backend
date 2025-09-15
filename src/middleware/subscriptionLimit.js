@@ -14,6 +14,7 @@ const checkNoteLimit = async (req, res, next) => {
     }
 
     const account = req.account;
+    console.log("account Line 17", account)
 
     // Pro plan has unlimited notes
     if (account.plan === SUBSCRIPTION_PLANS.PRO) {
@@ -27,7 +28,8 @@ const checkNoteLimit = async (req, res, next) => {
     }
 
     // Check if current note count exceeds the limit
-    if (account.noteCount >= limit.maxNotes) {
+    // if (account.noteCount >= limit.maxNotes) {
+    if (account.noteCount >= account.limit) {
       return sendError(res, 403, {
         message: "Note limit exceeded for your current plan",
         details: {

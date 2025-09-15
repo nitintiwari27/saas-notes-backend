@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Razorpay Test Payment</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <h2>Test Razorpay Payment</h2>
+  <button id="payBtn">Pay ₹999</button>
+
+  <script>
+    // Your bearer token
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGM2ZTIzYjhmZTJkYTEyYmEzMjcyMTUiLCJhY2NvdW50SWQiOiI2OGM2ZTIzYjhmZTJkYTEyYmEzMjcyMTEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTc5MjYzNTEsImV4cCI6MTc1ODUzMTE1MX0.BfAM8X6mLjkGajftu2gIZmHzv0vRNH3aVib0aZ6Bvqo";
+
+    document.getElementById("payBtn").onclick = async function () {
+      try {
+        // 1️⃣ Fetch profile details first
+        const profileRes = await axios.get(
+          "http://localhost:3000/auth/profile",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const { user, account } = profileRes.data.data;
+        console.log("Profile:", user, account);
+
+        const slug = account.slug; // dynamic tenant slug
+
+        // 2️⃣ Create Razorpay order for this account
+        const res = await axios.post(
+          `http://localhost:3000/subscription/tenants/${slug}/upgrade`,
+          { paymentMethod: "razorpay" },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const data = res.data.data;
+        console.log("Order Created:", data);
+
+        // 3️⃣ Open Razorpay Checkout
+        const options = {
+          key: data.razorpayKeyId,
+          amount: data.amount * 100, // in paise
+          currency: data.currency,
+          name: account.slug, // show account/company name
+          description: `Upgrade plan for ${account.slug}`,
+          order_id: data.orderId,
+          handler: async function (response) {
+            console.log("Payment success response:", response);
+
+            // 4️⃣ Verify payment with backend
+            const verifyRes = await axios.post(
+              "http://localhost:3000/subscription/verify-payment",
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                paymentId: data.paymentId,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            alert("Payment Verified: " + JSON.stringify(verifyRes.data));
+          },
+          prefill: {
+            name: user.name,        // dynamic user name
+            email: user.email_id,   // dynamic email
+            contact: "9999999999",  // Razorpay test contact
+          },
+          theme: { color: "#3399cc" },
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        console.error("Payment Error:", err);
+        alert("Something went wrong! Check console.");
+      }
+    };
+  </script>
+</body>
+</html>
