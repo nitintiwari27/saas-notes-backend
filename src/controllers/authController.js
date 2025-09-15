@@ -9,6 +9,7 @@ const {
   generateRandomString,
   sendResponse,
   sendError,
+  formatPasswordFromName,
 } = require("../utils/helpers");
 const { ROLES, SUBSCRIPTION_PLANS } = require("../utils/constants");
 
@@ -206,7 +207,9 @@ const inviteUser = async (req, res) => {
     }
 
     // Generate temporary password
-    const tempPassword = generateRandomString(12);
+    // const tempPassword = generateRandomString(12);
+    // const tempPassword = formatPasswordFromName(name);
+    const tempPassword = "password";
 
     // Create user
     const newUser = new User({
@@ -214,7 +217,6 @@ const inviteUser = async (req, res) => {
       email: email.toLowerCase(),
       password: tempPassword, // Will be hashed by pre-save middleware
       name,
-      isActive: false,
       role: userRole._id,
     });
 
@@ -302,10 +304,87 @@ const logout = async (req, res) => {
   }
 };
 
+const getAccountUsers = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search, role } = req.query;
+    const account = req.account;
+
+    // Build query
+    const query = {
+      account: account._id,
+      isDeleted: false
+    };
+
+    // Add role filter if provided
+    if (role && Object.values(ROLES).includes(role)) {
+      const roleDoc = await Role.findOne({
+        account: account._id,
+        roleName: role
+      });
+      
+      if (roleDoc) {
+        query.role = roleDoc._id;
+      }
+    }
+
+    // Add search filter if provided
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await User.countDocuments(query);
+    const totalPages = Math.ceil(total / parseInt(limit));
+
+    // Fetch users with pagination
+    const users = await User.find(query)
+      .populate('role', 'roleName')
+      .select('-password -tokensInvalidBefore') // Exclude sensitive fields
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    // Format response
+    const formattedUsers = users.map(user => ({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role?.roleName || 'unknown',
+      isActive: user.isActive,
+      lastLogin: user.lastLogin,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    }));
+
+    sendResponse(res, 200, true, 'Users retrieved successfully', {
+      users: formattedUsers,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: totalPages
+      },
+      accountInfo: {
+        totalUsers: total,
+        totalActiveUsers: users.filter(u => u.isActive).length
+      }
+    });
+
+  } catch (error) {
+    console.error('Get account users error:', error);
+    sendError(res, 500, 'Failed to retrieve users');
+  }
+};
+
 module.exports = {
   register,
   login,
   getProfile,
+  getAccountUsers,
   inviteUser,
   changePassword,
   logout,

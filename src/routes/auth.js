@@ -8,6 +8,7 @@ const {
   inviteUser,
   changePassword,
   logout,
+  getAccountUsers,
 } = require("../controllers/authController");
 
 const { authenticate } = require("../middleware/auth");
@@ -38,6 +39,13 @@ router.get(
   ensureTenantIsolation,
   checkAccountStatus,
   getProfile
+);
+router.get(
+  "/users",
+  authenticate,
+  ensureTenantIsolation,
+  requireAdmin,
+  getAccountUsers
 );
 
 // Invite user to account (Admin only)

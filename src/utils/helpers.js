@@ -63,6 +63,13 @@ const generateRandomString = (length = 8) => {
   return result;
 };
 
+const formatPasswordFromName = (name) => {
+  const noSpaces = name.replace(/\s+/g, ""); // remove all spaces
+  const formatted =
+    noSpaces.charAt(0).toUpperCase() + noSpaces.slice(1).toLowerCase();
+  return `${formatted}@@`;
+};
+
 /**
  * Send standardized API response
  */
@@ -96,4 +103,5 @@ module.exports = {
   generateRandomString,
   sendResponse,
   sendError,
+  formatPasswordFromName,
 };
