@@ -47,16 +47,7 @@ const createNote = async (req, res) => {
     // Populate tags for response
     await note.populate("tags");
 
-    sendResponse(res, 201, true, "Note created successfully", {
-      note: {
-        id: note._id,
-        title: note.title,
-        description: note.description,
-        tags: note.tags.map((tag) => tag.tagName),
-        createdAt: note.createdAt,
-        updatedAt: note.updatedAt,
-      },
-    });
+    sendResponse(res, 201, true, "Note created successfully");
   } catch (error) {
     console.error("Create note error:", error);
     sendError(res, 500, "Failed to create note");
@@ -85,8 +76,10 @@ const getNotes = async (req, res) => {
     }
 
     // Add tag filter if provided
+    // (STOP HERE)
     if (tags) {
-      const tagNames = Array.isArray(tags) ? tags : [tags];
+      const tagNames = typeof tags === "string" ? tags.split(",") : tags;
+
       const tagObjects = await Tag.find({
         account: user.account._id,
         tagName: { $in: tagNames.map((tag) => tag.toLowerCase()) },
@@ -95,16 +88,8 @@ const getNotes = async (req, res) => {
       if (tagObjects.length > 0) {
         query.tags = { $in: tagObjects.map((tag) => tag._id) };
       } else {
-        // If tags don't exist, return empty result
-        return sendResponse(res, 200, true, "Notes retrieved successfully", {
-          notes: [],
-          pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            total: 0,
-            pages: 0,
-          },
-        });
+        // if you want NO results when tags don't exist:
+        query.tags = { $in: [] };
       }
     }
 
