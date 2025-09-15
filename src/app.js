@@ -47,7 +47,8 @@ const corsOptions = {
       "http://localhost:3001",
       "http://127.0.0.1:3000",
       "http://127.0.0.1:3001",
-      "http://127.0.0.1:5500"
+      "http://127.0.0.1:5500",
+      "http://localhost:5173"
     ].filter(Boolean);
 
     if (allowedOrigins.includes(origin)) {
@@ -91,7 +92,7 @@ app.use(limiter);
 // Stricter rate limiting for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 auth requests per windowMs
+  max: 200, // Limit each IP to 10 auth requests per windowMs
   message: {
     success: false,
     message: "Too many authentication attempts, please try again later.",
@@ -173,6 +174,7 @@ app.use("/health", healthRoutes);
 
 // API routes with rate limiting
 app.use("/auth", authLimiter, authRoutes);
+
 app.use("/notes", notesRoutes);
 app.use("/subscription", subscriptionRoutes);
 
